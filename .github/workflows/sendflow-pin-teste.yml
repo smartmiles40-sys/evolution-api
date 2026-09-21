@@ -1,0 +1,43 @@
+# Liga a imagem publicada com um Postgres temporário e prova que a rota de fixar existe.
+name: Teste da imagem (fixar)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  teste:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: evo
+          POSTGRES_PASSWORD: evo
+          POSTGRES_DB: evolution
+        ports: ['5432:5432']
+        options: --health-cmd pg_isready --health-interval 5s --health-retries 10
+    steps:
+      - name: Sobe a Evolution adaptada
+        run: |
+          docker run -d --name evo --network host \
+            -e SERVER_URL=http://localhost:8080 \
+            -e AUTHENTICATION_API_KEY=chave-de-teste \
+            -e DATABASE_PROVIDER=postgresql \
+            -e DATABASE_CONNECTION_URI=postgresql://evo:evo@localhost:5432/evolution \
+            -e CACHE_REDIS_ENABLED=false -e CACHE_LOCAL_ENABLED=true \
+            ghcr.io/smartmiles40-sys/evolution-api:2.3.7-pin
+          for i in $(seq 1 60); do curl -sf http://localhost:8080/ >/dev/null && break; sleep 3; done
+          curl -s http://localhost:8080/ ; echo
+      - name: Rota existe e valida o corpo
+        run: |
+          echo "--- corpo invalido (espera 400 de validacao):"
+          curl -s -w ' [%{http_code}]\n' -X POST http://localhost:8080/chat/pinMessage/nao-existe -H 'apikey: chave-de-teste' -H 'Content-Type: application/json' -d '{"action":"x"}'
+          echo "--- corpo valido, instancia inexistente (espera 404 de instancia, NAO 'Cannot POST'):"
+          R=$(curl -s -X POST http://localhost:8080/chat/pinMessage/nao-existe -H 'apikey: chave-de-teste' -H 'Content-Type: application/json' -d '{"key":{"id":"A","remoteJid":"1@g.us","fromMe":true},"action":"pin","duration":86400}')
+          echo "$R"
+          echo "$R" | grep -q 'Cannot POST' && { echo "ROTA AUSENTE"; exit 1; } || echo "ROTA OK"
+          echo "--- rota antiga continua funcionando:"
+          curl -s -w ' [%{http_code}]\n' http://localhost:8080/instance/fetchInstances -H 'apikey: chave-de-teste'
+      - name: Log da Evolution
+        if: always()
+        run: docker logs evo 2>&1 | tail -40
