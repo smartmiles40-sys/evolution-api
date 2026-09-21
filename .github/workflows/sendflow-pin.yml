@@ -1,0 +1,39 @@
+# Imagem da Evolution 2.3.7 + rota /chat/pinMessage (fixar/desafixar mensagem),
+# usada só pelo SendFlow. Publica em ghcr.io/smartmiles40-sys/evolution-api.
+name: Imagem Evolution com fixar mensagem
+
+on:
+  push:
+    branches: [sendflow-pin]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ghcr.io/smartmiles40-sys/evolution-api:2.3.7-pin
+            ghcr.io/smartmiles40-sys/evolution-api:2.3.7-pin-${{ github.sha }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/smartmiles40-sys/evolution-api
+            org.opencontainers.image.description=Evolution API 2.3.7 + fixar mensagem (SendFlow)
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

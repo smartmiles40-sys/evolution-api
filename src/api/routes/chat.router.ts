@@ -5,6 +5,7 @@ import {
   DeleteMessage,
   getBase64FromMediaMessageDto,
   MarkChatUnreadDto,
+  PinMessageDto,
   NumberDto,
   PrivacySettingDto,
   ProfileNameDto,
@@ -25,6 +26,7 @@ import {
   contactValidateSchema,
   deleteMessageSchema,
   markChatUnreadSchema,
+  pinMessageSchema,
   messageUpSchema,
   messageValidateSchema,
   presenceSchema,
@@ -76,6 +78,16 @@ export class ChatRouter extends RouterBroker {
           schema: archiveChatSchema,
           ClassRef: ArchiveChatDto,
           execute: (instance, data) => chatController.archiveChat(instance, data),
+        });
+
+        return res.status(HttpStatus.CREATED).json(response);
+      })
+      .post(this.routerPath('pinMessage'), ...guards, async (req, res) => {
+        const response = await this.dataValidate<PinMessageDto>({
+          request: req,
+          schema: pinMessageSchema,
+          ClassRef: PinMessageDto,
+          execute: (instance, data) => chatController.pinMessage(instance, data),
         });
 
         return res.status(HttpStatus.CREATED).json(response);

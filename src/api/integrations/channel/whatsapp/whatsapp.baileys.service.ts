@@ -7,6 +7,7 @@ import {
   getBase64FromMediaMessageDto,
   LastMessage,
   MarkChatUnreadDto,
+  PinMessageDto,
   NumberBusiness,
   OnWhatsAppDto,
   PrivacySettingDto,
@@ -3737,6 +3738,32 @@ export class BaileysStartupService extends ChannelStartupService {
         archived: false,
         message: ['An error occurred while archiving the chat. Open a calling.', error.toString()],
       });
+    }
+  }
+
+  /**
+   * Fixa ou desafixa uma mensagem na conversa. O Baileys já monta o pinInChatMessage
+   * (type 1 = fixar, 2 = desafixar); faltava só a rota. Em grupo, o WhatsApp exige admin
+   * quando o grupo está em "só admins editam".
+   */
+  public async pinMessage(data: PinMessageDto) {
+    try {
+      const jid = createJid(data.key.remoteJid);
+      const key = {
+        id: data.key.id,
+        remoteJid: jid,
+        fromMe: data.key.fromMe,
+        ...(data.key.participant ? { participant: data.key.participant } : {}),
+      };
+      const fixar = data.action === 'pin';
+      const enviada = await this.client.sendMessage(jid, {
+        pin: key,
+        type: fixar ? proto.PinInChat.Type.PIN_FOR_ALL : proto.PinInChat.Type.UNPIN_FOR_ALL,
+        ...(fixar ? { time: data.duration ?? 604800 } : {}),
+      } as any);
+      return { pinned: fixar, key, messageId: enviada?.key?.id ?? null };
+    } catch (error) {
+      throw new BadRequestException('Error pinning message', error.toString());
     }
   }
 

@@ -4,6 +4,7 @@ import {
   DeleteMessage,
   getBase64FromMediaMessageDto,
   MarkChatUnreadDto,
+  PinMessageDto,
   NumberDto,
   PrivacySettingDto,
   ProfileNameDto,
@@ -32,6 +33,10 @@ export class ChatController {
 
   public async archiveChat({ instanceName }: InstanceDto, data: ArchiveChatDto) {
     return await this.waMonitor.waInstances[instanceName].archiveChat(data);
+  }
+
+  public async pinMessage({ instanceName }: InstanceDto, data: PinMessageDto) {
+    return await this.waMonitor.waInstances[instanceName].pinMessage(data);
   }
 
   public async markChatUnread({ instanceName }: InstanceDto, data: MarkChatUnreadDto) {

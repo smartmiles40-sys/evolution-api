@@ -81,6 +81,16 @@ export class ArchiveChatDto {
   archive: boolean;
 }
 
+/**
+ * Fixar / desafixar mensagem na conversa (SendFlow).
+ * action: 'pin' fixa por `duration` segundos (24h, 7d ou 30d); 'unpin' desafixa.
+ */
+export class PinMessageDto {
+  key: { id: string; remoteJid: string; fromMe: boolean; participant?: string };
+  action: 'pin' | 'unpin';
+  duration?: 86400 | 604800 | 2592000;
+}
+
 export class MarkChatUnreadDto {
   lastMessage?: LastMessage;
   chat?: string;
